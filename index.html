@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secret Santa Exchange Helper</title>
+    <style>
+        :root {
+            --primary: #c0392b;
+            --bg: #fdfbf7;
+            --text: #2c3e50;
+        }
+
+        body {
+            font-family: -apple-system, system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        h1,
+        h2 {
+            color: var(--primary);
+            text-align: center;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        input[type="number"],
+        select,
+        button {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .secondary {
+            background: #7f8c8d;
+            margin-top: 10px;
+        }
+
+        .result-box {
+            text-align: center;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .result-name {
+            font-size: 2em;
+            color: var(--primary);
+            font-weight: bold;
+            display: block;
+            margin-top: 10px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Use .hidden class exclusively for display control */
+        .url-output {
+            word-break: break-all;
+            background: #eee;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.9em;
+            margin-top: 10px;
+        }
+
+        .error {
+            color: red;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        /* Match Reveal Box */
+        #match-reveal {
+            background: #e8f6f3;
+        }
+
+        /* Family Reveal Box - Used in both Secure and Public Mode */
+        .family-reveal-box {
+            background: #fff3e0;
+            margin-top: 10px;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        #family-list {
+            list-style-type: none;
+            padding: 0;
+            text-align: left;
+            max-width: 80%;
+            margin: 10px auto 0;
+        }
+
+        #family-list li {
+            padding: 5px 0;
+            border-bottom: 1px dotted #ccc;
+        }
+
+        #family-list li:last-child {
+            border-bottom: none;
+        }
+
+        .secure-link-item {
+            margin-bottom: 15px;
+            border-bottom: 1px dotted #ccc;
+            padding-bottom: 10px;
+        }
+
+        .secure-link-item:last-child {
+            border-bottom: none;
+        }
+
+        .secure-link-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .security-toggle {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .security-toggle input {
+            width: auto;
+            margin-right: 10px;
+        }
+
+        .security-toggle label {
+            margin: 0;
+            font-weight: normal;
+        }
+
+        .reveal-match-button {
+            margin-top: 15px;
+        }
+
+        .explanation {
+            font-size: 0.9em;
+            color: #555;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            padding-left: 10px;
+            border-left: 3px solid var(--primary);
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>🎅 Secret Santa</h1>
+
+    <div class="card">
+        <h3>How It Works 💡</h3>
+        <p class="explanation" style="border-left-color: #3498db;">
+            This tool uses a **Cryptographically Seeded Random Number Generator** to determine the Secret Santa
+            assignments. The combination of the **Year** (Seed) and the list of **Participants** is used to generate a
+            unique, reproducible draw. This means the organizer never has to see the final matches, and the results can
+            be reliably recreated using the same parameters.
+        </p>
+    </div>
+
+    <div id="setup-view" class="hidden">
+        <div class="card">
+            <h3>Setup Exchange Parameters</h3>
+            <div class="input-group">
+
+                <label>Year (Seed)</label>
+                <p class="explanation">
+                    This number serves as the **primary seed** for the shuffle algorithm. Changing this value will
+                    completely change the assignment results. This allows the tool to be reused each year ensuring
+                    different results.
+                </p>
+                <input type="number" id="year-input" value="2024">
+
+            </div>
+
+            <div class="input-group">
+                <label>Shuffle Skip Count (0 = First Valid Match)</label>
+                <p class="explanation">
+                    The system finds many valid shuffles. This number determines which valid shuffle to use:
+                    <br>• **0** uses the first valid match found.
+                    <br>• **1** skips the first valid match and uses the second.
+                    <br>Use this if you need to re-draw without changing the Year or Participant list.
+                </p>
+                <input type="number" id="skip-input" value="0">
+
+            </div>
+
+            <div class="input-group">
+                <label>Participants & Exclusions (Family Groups)</label>
+                <p class="explanation">
+                    Use this field to define the participants and the **exclusion rules** (who cannot buy for whom).
+                    <br>• Separate members of a group/family with **commas** (e.g., Mom, Dad).
+                    <br>• Separate different groups or single people with **new lines** (press Enter).
+                    <br>Any person listed in the *same line* (the same group) **cannot** be matched with any other
+                    person in that same line.
+                </p>
+                <textarea id="groups-input" rows="6"
+                    placeholder="Group 1 (e.g. Mom, Dad)&#10;Group 2 (e.g. Sister, Spouse)&#10;Group 3 (e.g. Brother)"></textarea>
+            </div>
+
+            <div class="security-toggle">
+                <input type="checkbox" id="secure-mode-toggle">
+                <label for="secure-mode-toggle">Enable Secure Tokenized Links (No dropdown selector, prevents
+                    snooping)</label>
+            </div>
+
+            <button onclick="generateLink()">Generate Exchange Link(s)</button>
+            <div id="error-msg" class="error"></div>
+        </div>
+
+        <div id="link-result" class="card hidden">
+            <h3 id="link-header"></h3>
+            <p id="link-instruction"></p>
+            <div id="secure-link-output" class="url-output hidden">
+                <ul id="secure-link-list" class="secure-link-list"></ul>
+            </div>
+            <div id="public-link-output" class="url-output hidden"></div>
+            <button class="secondary" onclick="copyLink()">Copy Link(s) to Clipboard</button>
+        </div>
+    </div>
+
+    <div id="recipient-view" class="hidden"></div>
+
+    <script>
+        // --- 1. CORE LOGIC (SEEDED RANDOM & SHUFFLE) ---
+
+        // Seeded random number generator (Mulberry32)
+        function mulberry32(a) {
+            return function () {
+                var t = a += 0x6D2B79F5;
+                t = Math.imul(t ^ (t >>> 15), t | 1);
+                t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+                return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+            }
+        }
+
+        // String hashing function (cyrb53) to turn text into a number
+        const cyrb53 = (str, seed = 0) => {
+            let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+            for (let i = 0, ch; i < str.length; i++) {
+                ch = str.charCodeAt(i);
+                h1 = Math.imul(h1 ^ ch, 2654435761);
+                h2 = Math.imul(h2 ^ ch, 1597334677);
+            }
+            h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+            h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+            return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+        };
+
+        // The Fisher-Yates shuffle using our seeded random
+        function shuffle(array, randomFunc) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex != 0) {
+                randomIndex = Math.floor(randomFunc() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        // --- 2. THE SOLVER (Finds the valid shuffle) ---
+
+        // Updated to accept skipCount and find the (skipCount + 1)th valid match.
+        function findValidShuffle(groups, yearStr, skipCount = 0) {
+            let allPeople = [];
+            let exclusions = {};
+
+            groups.forEach(group => {
+                group.forEach(person => {
+                    let p = person.trim();
+                    if (!p) return;
+                    allPeople.push(p);
+                    if (!exclusions[p]) exclusions[p] = new Set();
+                    group.forEach(g => exclusions[p].add(g.trim()));
+                });
+            });
+
+            allPeople = [...new Set(allPeople)];
+            if (allPeople.length < 2) return null;
+
+            allPeople.sort();
+
+            const baseString = yearStr + "-" + allPeople.join("|");
+            const baseSeed = cyrb53(baseString);
+
+            const MAX_ATTEMPTS = 10000;
+            let validMatchCount = 0;
+
+            // Search from offset 0 to MAX_ATTEMPTS
+            for (let offset = 0; offset < MAX_ATTEMPTS; offset++) {
+
+                // Seed calculation is baseSeed + offset (the absolute index)
+                const rng = mulberry32(baseSeed + offset);
+                let drawPile = [...allPeople];
+                shuffle(drawPile, rng);
+
+                let isValid = true;
+                let pairs = {};
+
+                for (let i = 0; i < allPeople.length; i++) {
+                    let giver = allPeople[i];
+                    let receiver = drawPile[i];
+
+                    if (exclusions[giver].has(receiver)) {
+                        isValid = false;
+                        break;
+                    }
+                    pairs[giver] = receiver;
+                }
+
+                if (isValid) {
+                    // If this is the one we want (0-indexed skip count)
+                    if (validMatchCount === skipCount) {
+                        // Return the ABSOLUTE offset index of the Nth valid match
+                        return { offset, pairs, allPeople };
+                    }
+                    validMatchCount++;
+                }
+            }
+            return null; // Failed to find the desired valid match within MAX_ATTEMPTS
+        }
+
+
+        // --- 3. UI LOGIC & VIEWS ---
+
+        const params = new URLSearchParams(window.location.search);
+        const encodedGroups = params.get('g');
+        const year = params.get('y');
+        const offset = params.get('o');
+        const tokenParam = params.get('t');
+
+        if (encodedGroups && year && offset) {
+            // === RECIPIENT MODE ===
+            document.getElementById('recipient-view').classList.remove('hidden');
+
+            let finalPairs = {};
+            let finalGroupList = [];
+            let allParticipants = [];
+
+            // 1. Setup Data
+            finalGroupList = decodeURIComponent(encodedGroups).split('|').map(g => g.split(',').map(n => n.trim()).filter(n => n !== ""));
+
+            finalGroupList.forEach(group => group.forEach(p => allParticipants.push(p.trim())));
+            allParticipants = [...new Set(allParticipants)];
+            allParticipants.sort();
+
+            const baseString = year + "-" + allParticipants.join("|");
+            const baseSeed = cyrb53(baseString);
+
+            // JUMP directly to the specific offset for the final shuffle
+            const rng = mulberry32(baseSeed + parseInt(offset));
+            let drawPile = [...allParticipants];
+            shuffle(drawPile, rng);
+
+            // Populate finalPairs map: {Giver: Receiver}
+            for (let i = 0; i < allParticipants.length; i++) {
+                finalPairs[allParticipants[i]] = drawPile[i];
+            }
+
+            // --- Helper Function for Rendering Match ---
+            const renderMatchBox = (person, match) => `
+            <div class="card" id="secure-card">
+                <h2>🎄 Secret Santa ${year}</h2>
+                <p style="font-weight: bold; text-align: center;">Hello, ${person}.</p>
+                <button id="secure-reveal-btn" class="reveal-match-button">Click to Reveal Your Match!</button>
+                <div id="match-reveal" class="result-box hidden">
+                    You are buying a gift for:
+                    <span class="result-name">${match}</span>
+                </div>
+        `;
+
+            // --- Helper Function for Rendering Family List (Used in Secure Mode) ---
+            const renderFamilyAssignments = (group) => {
+                let listHtml = '';
+                group.forEach(member => {
+                    const match = finalPairs[member];
+                    listHtml += `<li><strong>${member}</strong> buys for: <strong>${match}</strong></li>`;
+                });
+
+                // Using the defined class for consistent styling
+                return `
+                <div id="family-reveal-secure" class="family-reveal-box hidden">
+                    <h3>🎁 Your Family's Assignments:</h3>
+                    <ul id="family-list">${listHtml}</ul>
+                </div>
+            `;
+            };
+
+            if (tokenParam) {
+                // === SECURE MODE EXECUTION ===
+                let identifiedUser = null;
+
+                for (const person of allParticipants) {
+                    const uniqueString = person + year + offset;
+                    const generatedToken = cyrb53(uniqueString).toString(16).toUpperCase();
+
+                    if (generatedToken === tokenParam) {
+                        identifiedUser = person;
+                        break;
+                    }
+                }
+
+                if (identifiedUser) {
+                    const match = finalPairs[identifiedUser];
+
+                    let outputHTML = renderMatchBox(identifiedUser, match);
+
+                    // Find user's group
+                    const myGroup = finalGroupList.find(g => g.includes(identifiedUser));
+
+                    // Add button for family matches if group size > 1
+                    if (myGroup && myGroup.length > 1) {
+                        outputHTML += `
+                        <button id="secure-family-toggle" class="secondary" style="margin-top: 15px;">
+                            Parent View: Show family matches
+                        </button>
+                    `;
+                    }
+
+                    // Close the card div that was opened in renderMatchBox
+                    outputHTML += `</div>`;
+
+                    // Add the hidden family assignment container (will be revealed by button)
+                    if (myGroup && myGroup.length > 1) {
+                        outputHTML += renderFamilyAssignments(myGroup);
+                    }
+
+                    document.getElementById('recipient-view').innerHTML = outputHTML;
+
+                    // --- Event Listeners for Match and Family Toggle ---
+
+                    // 1. Match Reveal
+                    const secureRevealBtn = document.getElementById('secure-reveal-btn');
+                    const matchRevealBox = document.getElementById('match-reveal');
+
+                    if (secureRevealBtn && matchRevealBox) {
+                        secureRevealBtn.addEventListener('click', (e) => {
+                            matchRevealBox.classList.remove('hidden');
+                            e.target.classList.add('hidden'); // Hide the reveal button
+                        });
+                    }
+
+
+                    // 2. Family Toggle
+                    const secureFamilyBtn = document.getElementById('secure-family-toggle');
+                    const secureFamilyAssignments = document.getElementById('family-reveal-secure');
+
+                    if (secureFamilyBtn && secureFamilyAssignments) {
+                        secureFamilyBtn.addEventListener('click', () => {
+                            const isHidden = secureFamilyAssignments.classList.toggle('hidden');
+                            secureFamilyBtn.innerText = isHidden
+                                ? "Parent View: Show family matches"
+                                : "Parent View: Hide family matches";
+                        });
+                    }
+
+                } else {
+                    document.getElementById('recipient-view').innerHTML = `
+                    <div class="card error">
+                        <h3>Token Invalid</h3>
+                        <p>This link is invalid or corrupted. Please check with the exchange organizer.</p>
+                    </div>
+                `;
+                }
+
+            } else {
+                // === PUBLIC MODE EXECUTION (Use Dropdown) ===
+                document.getElementById('recipient-view').innerHTML = `
+                <div class="card" id="public-card">
+                    <h2 id="year-display">🎄 Secret Santa ${year}</h2>
+                    <p style="text-align:center;">Who are you?</p>
+                    <select id="name-selector">
+                        <option value="">-- Select Your Name --</option>
+                    </select>
+                    <button class="reveal-match-button hidden" id="public-reveal-btn" onclick="revealMatch()">Click to Reveal Your Match!</button>
+                    
+                </div>
+                <div id="match-reveal" class="result-box hidden">
+                    You are buying a gift for:
+                    <span class="result-name" id="match-name"></span>
+                </div>
+                <div id="family-reveal" class="result-box family-reveal-box hidden">
+                    <h3>🎁 Your Family's Assignments:</h3>
+                    <ul id="family-list"></ul>
+                </div>
+            `;
+
+                const select = document.getElementById('name-selector');
+                const publicRevealBtn = document.getElementById('public-reveal-btn');
+
+                allParticipants.forEach(p => {
+                    let opt = document.createElement('option');
+                    opt.value = p;
+                    opt.innerText = p;
+                    select.appendChild(opt);
+                });
+
+                // --- Reveal Functions (Defined inside public mode scope) ---
+
+                const revealFamilyMatch = () => {
+                    const myName = document.getElementById('name-selector').value;
+                    if (!myName) return;
+
+                    const familyReveal = document.getElementById('family-reveal');
+                    const isHidden = familyReveal.classList.toggle('hidden');
+
+                    const familyButton = document.getElementById('family-button');
+
+                    if (!familyButton) return;
+
+                    familyButton.innerText = isHidden
+                        ? `Parent View: Show all family matches`
+                        : `Parent View: Hide all family matches`;
+
+                    // If revealing family, hide single match
+                    if (!isHidden) {
+                        const myGroup = finalGroupList.find(g => g.includes(myName));
+                        const familyList = document.getElementById('family-list');
+
+                        familyList.innerHTML = '';
+
+                        myGroup.forEach(member => {
+                            const match = finalPairs[member];
+                            let li = document.createElement('li');
+                            li.innerHTML = `<strong>${member}</strong> buys for: <strong>${match}</strong>`;
+                            familyList.appendChild(li);
+                        });
+                        document.getElementById('match-reveal').classList.add('hidden');
+                        publicRevealBtn.classList.add('hidden'); // Hide single match button when family is shown
+                    } else {
+                        publicRevealBtn.classList.remove('hidden'); // Show single match button when family is hidden
+                    }
+                };
+
+                const revealMatch = () => {
+                    const myName = select.value;
+                    if (!myName) return;
+
+                    document.getElementById('match-reveal').classList.remove('hidden');
+                    document.getElementById('match-name').innerText = finalPairs[myName];
+                    document.getElementById('family-reveal').classList.add('hidden');
+
+                    // FIX: Hide the button after the match is revealed
+                    publicRevealBtn.classList.add('hidden');
+
+                    const familyButton = document.getElementById('family-button');
+                    if (familyButton) {
+                        familyButton.innerText = `Parent View: Show all family matches`;
+                    }
+                };
+
+                // Expose to window for inline onclick handlers
+                window.revealMatch = revealMatch;
+                window.revealFamilyMatch = revealFamilyMatch;
+
+
+                // --- Event Listener for Dropdown Change ---
+                select.addEventListener('change', () => {
+                    const myName = select.value;
+                    let parentButton = document.getElementById('family-button');
+
+                    // Hide all previous results
+                    document.getElementById('match-reveal').classList.add('hidden');
+                    document.getElementById('family-reveal').classList.add('hidden');
+
+                    // Only show the reveal button if a name is selected
+                    if (myName) {
+                        publicRevealBtn.classList.remove('hidden');
+                    } else {
+                        publicRevealBtn.classList.add('hidden');
+                    }
+
+
+                    if (!myName) {
+                        if (parentButton) parentButton.classList.add('hidden');
+                        return;
+                    }
+
+                    const myGroup = finalGroupList.find(g => g.includes(myName));
+
+                    if (myGroup && myGroup.length > 1) {
+                        if (!parentButton) {
+                            let btn = document.createElement('button');
+                            btn.id = 'family-button';
+                            btn.classList.add('secondary');
+                            btn.style.marginTop = '10px';
+                            const cardElement = document.getElementById('public-card');
+
+                            cardElement.appendChild(btn); // Append at the end of the card
+                            parentButton = btn;
+                        }
+                        parentButton.innerText = `Parent View: Show all family matches`;
+                        parentButton.classList.remove('hidden');
+                        parentButton.onclick = revealFamilyMatch;
+
+                    } else if (parentButton) {
+                        parentButton.classList.add('hidden');
+                    }
+                });
+            }
+
+        } else {
+            // === SETUP MODE ===
+            document.getElementById('setup-view').classList.remove('hidden');
+
+            window.generateLink = () => {
+                const yearVal = document.getElementById('year-input').value;
+                const rawText = document.getElementById('groups-input').value;
+                const isSecure = document.getElementById('secure-mode-toggle').checked;
+                const skipCount = parseInt(document.getElementById('skip-input').value) || 0;
+                const errorDiv = document.getElementById('error-msg');
+                errorDiv.innerText = "";
+
+                const lines = rawText.split('\n').filter(l => l.trim() !== "");
+                const groups = lines.map(l => l.split(',').map(n => n.trim()).filter(n => n !== ""));
+
+                let totalParticipants = groups.flat().length;
+                if (totalParticipants < 2) {
+                    errorDiv.innerText = "You need at least two people to exchange gifts.";
+                    return;
+                }
+
+                // Pass the skip count to find the Nth valid match
+                const solution = findValidShuffle(groups, yearVal, skipCount);
+
+                if (!solution) {
+                    errorDiv.innerText = "Error: No valid combination found. The constraints are too tight or the skip count is too high.";
+                    return;
+                }
+
+                const groupString = groups.map(g => g.join(',')).join('|');
+                const encoded = encodeURIComponent(groupString);
+
+                document.getElementById('link-result').classList.remove('hidden');
+                document.getElementById('secure-link-output').classList.add('hidden');
+                document.getElementById('public-link-output').classList.add('hidden');
+
+                if (isSecure) {
+                    // --- SECURE MODE OUTPUT ---
+                    const listContainer = document.getElementById('secure-link-list');
+                    listContainer.innerHTML = '';
+
+                    solution.allPeople.forEach(person => {
+                        const uniqueString = person + yearVal + solution.offset;
+                        const token = cyrb53(uniqueString).toString(16).toUpperCase();
+
+                        const secureUrl = `${window.location.origin}${window.location.pathname}?y=${yearVal}&o=${solution.offset}&g=${encoded}&t=${token}`;
+
+                        let li = document.createElement('li');
+                        li.classList.add('secure-link-item');
+                        li.innerHTML = `
+                        <strong>${person}:</strong> 
+                        <a href="${secureUrl}" target="_blank">${secureUrl}</a>
+                    `;
+                        listContainer.appendChild(li);
+                    });
+
+                    document.getElementById('secure-link-output').classList.remove('hidden');
+                    document.getElementById('link-header').innerText = "🎁 Secure Links Generated";
+                    document.getElementById('link-instruction').innerText = "Distribute each unique link privately to the corresponding person.";
+
+                } else {
+                    // --- PUBLIC MODE OUTPUT ---
+                    const publicUrl = `${window.location.origin}${window.location.pathname}?y=${yearVal}&o=${solution.offset}&g=${encoded}`;
+
+                    document.getElementById('public-link-output').classList.remove('hidden');
+                    // Use innerHTML to make the URL a clickable hyperlink
+                    document.getElementById('public-link-output').innerHTML = `<a href="${publicUrl}" target="_blank">${publicUrl}</a>`;
+                    document.getElementById('link-header').innerText = "🎁 Single Public Link Generated";
+                    document.getElementById('link-instruction').innerText = "Share this single link with the entire group (participants select their name from a dropdown).";
+                }
+            };
+
+            window.copyLink = () => {
+                const isSecure = document.getElementById('secure-mode-toggle').checked;
+                let textToCopy = '';
+
+                if (isSecure) {
+                    textToCopy = Array.from(document.querySelectorAll('.secure-link-item a'))
+                        .map(a => `${a.previousElementSibling.innerText}: ${a.href}`)
+                        .join('\n');
+                } else {
+                    // To copy the public URL, we get the text content of the <a> tag
+                    const publicLinkElement = document.getElementById('public-link-output').querySelector('a');
+                    textToCopy = publicLinkElement ? publicLinkElement.href : '';
+                }
+
+                navigator.clipboard.writeText(textToCopy);
+                alert("Copied link(s) to clipboard!");
+            };
+        }
+    </script>
+
+</body>
+
+</html>

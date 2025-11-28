@@ -59,3 +59,12 @@ The core logic relies on a **seeded shuffling** process:
 3.  Any shuffle that violates the exclusion rules is discarded.
 4.  The loop finds the `(Skip Count + 1)`-th valid shuffle and locks it.
 5.  The final URL contains the `Year`, the `Offset` (which determines the shuffle), and the encoded `Groups`. A secure link also includes a hashed token (`t`).
+
+## 🤖 Attribution and AI Assistance
+
+**The logic, core functions, and overall structure of this script were developed and refined with significant coding assistance from the Gemini model (Google).**
+
+This repository serves primarily as documentation of a successful iterative design and debugging process, and demonstrates the author's ability to:
+* Define clear functional requirements and user interfaces.
+* Specify complex exclusion algorithms and cryptographic seeding methods.
+* Conduct thorough debugging and refactoring of generated code (as demonstrated across multiple iterations).
